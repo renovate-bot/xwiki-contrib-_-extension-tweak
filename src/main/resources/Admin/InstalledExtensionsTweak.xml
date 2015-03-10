@@ -27,11 +27,10 @@
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <creationDate>1425996514000</creationDate>
-  <parent>Admin.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <date>1426001844000</date>
-  <contentUpdateDate>1426001099000</contentUpdateDate>
+  <date>1426003164000</date>
+  <contentUpdateDate>1426003164000</contentUpdateDate>
   <version>1.1</version>
   <title>Installed extensions tweaks</title>
   <comment/>
@@ -86,20 +85,23 @@ As a page playing with installed extension it could be dangerous.
         {{warning}}Extension with id **$extensionId** available on wiki **$wiki** is not root extension and none of its dependencies are.{{/warning}}
       #else
         #if ($request.confirm == 'true')
-          #set($allWikis = $services.wiki.getAllIds())
-          #foreach ($rootExtension in $rootExtensions.values())
-            $installedExtensions.repository.uninstallExtension($rootExtension, $null)
-            #foreach ($wiki in $allWikis)
-              #set($void = $installedExtensions.repository.installExtension($rootExtension, "wiki:$wiki", $rootExtension.isDependency($null)))
-            #end
-          #end
-          {{success}}
-            The following root extensions have been moved to each wiki:
+          #if ($xwiki.hasAccessLevel('programming', $doc.fullName))
+            #set($allWikis = $services.wiki.getAllIds())
             #foreach ($rootExtension in $rootExtensions.values())
-              * $rootExtension#if ($rootExtension.type == 'jar') {{warning}}(require a restart to be fully applied){{/warning}}#end
-
+              #foreach ($wiki in $allWikis)
+                #set($void = $installedExtensions.repository.installExtension($rootExtension, "wiki:$wiki", $rootExtension.isDependency($null)))
+              #end
             #end
-          {{/success}}
+            {{success}}
+              The following root extensions have been moved to each wiki:
+              #foreach ($rootExtension in $rootExtensions.values())
+                * $rootExtension#if ($rootExtension.type == 'jar') {{warning}}(require a restart to be fully applied){{/warning}}#end
+
+              #end
+            {{/success}}
+          #else
+            {{error}}You need programming right to use this feature.{{/error}}
+          #end
         #else
           {{info}}
             The following root extensions will be moved to each wiki:
