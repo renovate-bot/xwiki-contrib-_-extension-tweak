@@ -33,7 +33,7 @@
   <artifactId>extension-tweak</artifactId>
   <packaging>xar</packaging>
   <name>Extension Tweak</name>
-  <version>1.0</version>
+  <version>1.1-SNAPSHOT</version>
   <description>Provide various tools to manipulate extensions (usually in a not very clean way)</description>
   <developers>
     <developer>
