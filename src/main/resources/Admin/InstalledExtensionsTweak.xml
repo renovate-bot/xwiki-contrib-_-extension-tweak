@@ -27,10 +27,11 @@
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <creationDate>1425996514000</creationDate>
+  <parent>Admin.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <date>1426003164000</date>
-  <contentUpdateDate>1426003164000</contentUpdateDate>
+  <date>1426003423000</date>
+  <contentUpdateDate>1426003407000</contentUpdateDate>
   <version>1.1</version>
   <title>Installed extensions tweaks</title>
   <comment/>
@@ -88,6 +89,7 @@ As a page playing with installed extension it could be dangerous.
           #if ($xwiki.hasAccessLevel('programming', $doc.fullName))
             #set($allWikis = $services.wiki.getAllIds())
             #foreach ($rootExtension in $rootExtensions.values())
+              #set($void = $installedExtensions.repository.uninstallExtension($rootExtension, $null))
               #foreach ($wiki in $allWikis)
                 #set($void = $installedExtensions.repository.installExtension($rootExtension, "wiki:$wiki", $rootExtension.isDependency($null)))
               #end
@@ -100,7 +102,7 @@ As a page playing with installed extension it could be dangerous.
               #end
             {{/success}}
           #else
-            {{error}}You need programming right to use this feature.{{/error}}
+            {{error}}You need programming right to execute this action.{{/error}}
           #end
         #else
           {{info}}
