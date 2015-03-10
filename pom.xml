@@ -33,7 +33,7 @@
   <artifactId>extension-tweak</artifactId>
   <packaging>xar</packaging>
   <name>Extension Tweak</name>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <description>Provide various tools to manipulate extensions (usually in a not very clean way)</description>
   <developers>
     <developer>
@@ -46,7 +46,7 @@
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-extension-script</artifactId>
-      <type>xar</type>
+      <type>jar</type>
       <version>4.0</version>
       <scope>runtime</scope>
     </dependency>
@@ -73,7 +73,7 @@
     <connection>scm:git:git://github.com/xwiki-contrib/extension-tweak.git</connection>
     <developerConnection>scm:git:git@github.com:xwiki-contrib/extension-tweak.git</developerConnection>
     <url>https://github.com/xwiki-contrib/extension-tweak</url>
-    <tag>HEAD</tag>
+    <tag>extension-tweak-1.0</tag>
   </scm>
   <distributionManagement>
     <repository>
