@@ -68,6 +68,16 @@
         <version>${commons.version}</version>
       </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <!-- The release plugin version in 5.3 does not work well with recent git -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5.2</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <scm>
     <connection>scm:git:git://github.com/xwiki-contrib/extension-tweak.git</connection>
