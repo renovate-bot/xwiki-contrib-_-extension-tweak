@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
  * See the NOTICE file distributed with this work for additional
  * information regarding copyright ownership.
@@ -30,8 +31,8 @@
   <parent>Admin.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <date>1426003423000</date>
-  <contentUpdateDate>1426003407000</contentUpdateDate>
+  <date>1432893173000</date>
+  <contentUpdateDate>1432893173000</contentUpdateDate>
   <version>1.1</version>
   <title>Installed extensions tweaks</title>
   <comment/>
@@ -56,6 +57,8 @@ As a page playing with installed extension it could be dangerous.
 {{/velocity}}
 
 = Make sure an extension and all its dependencies are installed on wikis and not on root namespace =
+
+[since 5.3]
 
 {{velocity}}
 #macro(getRootExtensions $installedExtension $extensionNamespace $rootExtensions)
@@ -144,5 +147,62 @@ As a page playing with installed extension it could be dangerous.
     &lt;input type="submit" value="Move"/&gt;
   &lt;/form&gt; 
 {{/html}}
+{{/velocity}}
+
+= Remove uninstalled extensions
+
+[Since 5.3]
+
+{{html}}
+ &lt;form&gt;
+   &lt;input type="hidden" name="eaction" value="clean_search"/&gt;&lt;/dd&gt;
+   &lt;input type="submit" value="Search"/&gt;
+  &lt;/form&gt; 
+{{/html}}
+
+
+{{velocity}}
+#macro(searchExtensionsToRemove $extensionsToRemove)
+  #set($localExtensions = $services.extension.local.localExtensions)
+  #set($installedExtensionRepository = $services.extension.installed.repository)
+  #foreach ($localExtension in $localExtensions)
+    #if (!$installedExtensionRepository.getInstalledExtension($localExtension.id))
+      #set($void = $extensionsToRemove.add($localExtension))
+    #end
+  #end
+#end
+#if ($request.eaction == 'clean_search')
+  #set($extensionsToRemove = [])
+  #searchExtensionsToRemove($extensionsToRemove)
+  #if ($extensionsToRemove.isEmpty())
+    {{info}}No extension to clean could be found{{/info}}
+  #else
+    {{box}}
+    The following local extensions will be removed:
+    #foreach ($extensionToRemove in $extensionsToRemove)
+      * $extensionToRemove
+    #end
+
+    {{html}}
+       &lt;form&gt;
+         &lt;input type="hidden" name="eaction" value="clean_confirm"/&gt;&lt;/dd&gt;
+         &lt;input type="submit" value="Confirm"/&gt;
+       &lt;/form&gt; 
+    {{/html}}
+    {{/box}}
+  #end
+#elseif ($request.eaction == 'clean_confirm')
+  #set($extensionsToRemove = [])
+  #searchExtensionsToRemove($extensionsToRemove)
+  #if ($extensionsToRemove.isEmpty())
+    {{info}}No extension to clean could be found{{/info}}
+  #else
+    #set($localExtensionRepository = $services.extension.local.repository)
+    #foreach ($extensionToRemove in $extensionsToRemove)
+      #set($void = $localExtensionRepository.removeExtension($extensionToRemove))
+      * {{success}}Extension $extensionToRemove has been removed from local repository{{/success}}
+    #end
+  #end
+#end
 {{/velocity}}</content>
 </xwikidoc>

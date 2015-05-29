@@ -27,7 +27,7 @@
   <parent>
    <groupId>org.xwiki.commons</groupId>
    <artifactId>xwiki-commons-pom</artifactId>
-   <version>6.4.2</version>
+   <version>5.3</version>
   </parent>
   <groupId>org.xwiki.contrib</groupId>
   <artifactId>extension-tweak</artifactId>
@@ -47,7 +47,7 @@
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-extension-script</artifactId>
       <type>jar</type>
-      <version>4.0</version>
+      <version>${commons.version}</version>
       <scope>runtime</scope>
     </dependency>
   </dependencies>
