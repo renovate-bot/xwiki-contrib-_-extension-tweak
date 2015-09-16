@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xwikidoc>
+  <web>Admin</web>
+  <name>EMInstallServiceGroovy</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <parent/>
+  <creator>xwiki:XWiki.Admin</creator>
+  <author>xwiki:XWiki.Admin</author>
+  <customClass/>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <creationDate>1420066800000</creationDate>
+  <date>1442398625000</date>
+  <contentUpdateDate>1442398625000</contentUpdateDate>
+  <version>1.1</version>
+  <title/>
+  <defaultTemplate/>
+  <validationScript/>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>false</hidden>
+  <object>
+    <class>
+      <name>XWiki.RequiredRightClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <level>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <multiSelect>0</multiSelect>
+        <name>level</name>
+        <number>1</number>
+        <picker>0</picker>
+        <prettyName>level</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators> ,|</separators>
+        <size>1</size>
+        <sort>none</sort>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>edit|programming</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </level>
+    </class>
+    <name>Admin.EMInstallServiceGroovy</name>
+    <number>0</number>
+    <className>XWiki.RequiredRightClass</className>
+    <guid>162be5bd-6bc8-4f09-9dc5-6718d25e0041</guid>
+    <property>
+      <level>programming</level>
+    </property>
+  </object>
+  <content>package org.xwiki.contrib.extensiontweak;
+
+//{{{
+import org.xwiki.job.Job;
+import org.xwiki.job.event.status.*;
+import org.slf4j.Logger;
+import org.xwiki.model.script.ModelScriptService;
+import org.xwiki.model.reference.DocumentReference;
+import org.xwiki.extension.InstalledExtension;
+import org.xwiki.extension.distribution.internal.DistributionManager;
+import org.xwiki.extension.distribution.internal.job.WikiDistributionJob;
+import org.xwiki.extension.distribution.internal.job.DistributionJobStatus;
+import org.xwiki.extension.distribution.internal.job.step.DefaultUIDistributionStep;
+import org.xwiki.extension.distribution.internal.job.step.DistributionStep;
+import org.xwiki.extension.distribution.internal.job.step.ReportDistributionStep;
+import org.xwiki.extension.job.InstallRequest;
+import org.xwiki.extension.script.ExtensionManagerScriptService;
+import org.xwiki.extension.xar.question.ConflictQuestion;
+import org.xwiki.extension.xar.question.ConflictQuestion.GlobalAction;
+import org.xwiki.extension.xar.question.CleanPagesQuestion;
+
+class EMInstallService {
+
+  Logger logger;
+  ModelScriptService modelScriptService;
+  ExtensionManagerScriptService extensionManager;
+  DistributionManager distributionManager;
+  
+  public void initialize(def services) {
+    this.extensionManager = services.extension;
+    this.logger = services.logging.getLogger(EMInstallService.getName());
+    this.distributionManager = services.component.componentManager.getInstance(DistributionManager.class);
+    this.modelScriptService = services.model;
+  }
+  
+  /**
+   * Installs the passed extensions on the passed wiki. This function starts the install of the extensions and returns
+   * when all extensions are done being installed.
+   * In order to get the progress, you should read the job statuses of the extensions you request for installation.
+   *
+   * @param wikiname The name of the wiki to install the extensions
+   * @param extensions A map of extensions to install in the wiki, where the keys are the ids of the extensions to be
+   *                   used as keys in the status map, and the values are maps with extensionId and extensionVersion
+   *                   values.
+   */
+  public void installExtensions(String wikiname, Map&lt;String, Map&gt; extensions) {
+    if (this.extensionManager == null) {
+      throw new RuntimeException('API not initialized');
+    }
+
+    if (wikiname == null || wikiname.length() == 0) {
+      logger.error('No target wiki defined');
+      return;
+    }
+
+    logSetupStep(wikiname, 'extensions', 'INPROGRESS');
+
+    extensions.each({ key, value -&gt;
+      this.installExtension(wikiname, key, value)
+    });
+
+    logSetupStep(wikiname, 'extensions', 'FINISHED');
+  }
+
+  /**
+    Install passed extension on the passed wiki. This function returns when the extension is done being installed.
+   */
+  private boolean installExtension(String wikiname, String extensionName, Map extensionDetails) {
+
+    // start progress
+    logSetupStep(wikiname, extensionName, 'INPROGRESS');
+    try {
+      // get the information about how to install the extension
+      String extensionId = (String) extensionDetails.get('extensionId');
+      String extensionVersion = (String) extensionDetails.get('extensionVersion');
+      // what decisions to make for the pages
+      Map pagesDecisionsConfigged = (Map) extensionDetails.get('pagesDecisions');
+      // the default decision for a page, if not found in the list
+      String defaultConfiggedDecision = (String) extensionDetails.get('defaultDecision');
+      // the spaces to keep from being deleted on pages cleanup step
+      List spacesToKeep = (List) extensionDetails.get('spacesToKeep');
+      // the pages to keep from being deleted on pages cleanup step.
+      def wikiRef = modelScriptService.createWikiReference(wikiname);
+      List pagesToKeep = ((List)extensionDetails.get('pagesToKeep')).collect({modelScriptService.resolveDocument(it, wikiRef)});
+      // the default delete decision: can be DELETE or DEFAULT, to allow forcing the deletion of pages instead of using the default proposed by EM
+      String defaultDeleteDecision = (String) extensionDetails.get('defaultDeleteDecision');
+      // get the setting of whether the install should be done with the current user or with the user from the package.
+      // By default install with user from the package
+      Boolean installWithCurrentUser = (Boolean) extensionDetails.get('installWithCurrentUser');
+      if (installWithCurrentUser == null) {
+        installWithCurrentUser = false;
+      }
+
+      // prepare the default decision from the info we got
+      // by default is next
+      GlobalAction defaultDecision = ConflictQuestion.GlobalAction.NEXT;
+      // if anything was passed, use what we got
+      if (defaultConfiggedDecision != null &amp;&amp; defaultConfiggedDecision.length() &gt; 0) {
+          GlobalAction defaultConfiggedDecisionParsed = GlobalAction.valueOf(defaultConfiggedDecision);
+          if (defaultConfiggedDecisionParsed != null) {
+              defaultDecision = defaultConfiggedDecisionParsed;
+          }
+      }
+      // prepare the list of decisions with GlobalActions
+      Map&lt;String, GlobalAction&gt; pagesDecisions = new HashMap&lt;String, ConflictQuestion.GlobalAction&gt;();
+      if (pagesDecisionsConfigged != null) {
+        pagesDecisionsConfigged.each({ key, value -&gt;
+            GlobalAction parsedDecision = GlobalAction.valueOf(value);
+            if (parsedDecision != null) {
+                pagesDecisions.put(key, parsedDecision);
+            }
+        });
+      }
+
+      String extensionNamespace = "wiki:${wikiname}";
+      logger.info('Installing [{}] version [{}] on namespace [{}] with following parameters: \nPages decisions: [{}]\nDefault page decision: [{}]\nSpaces to keep: [{}]\nDefault delete decision: [{}]',
+                  extensionId, extensionVersion, extensionNamespace, pagesDecisions, defaultDecision, spacesToKeep, defaultDeleteDecision);
+      
+      // prepare the install request
+      InstallRequest installRequest = this.extensionManager.createInstallRequest(extensionId, extensionVersion, extensionNamespace);
+      // if not otherwise specified, preserve the author of the documents in the extension
+      if (!installWithCurrentUser) {
+        installRequest.removeProperty('user.reference');
+      }
+      
+      // start the install
+      Job installJob = this.extensionManager.install(installRequest);
+      JobStatus installJobStatus = installJob.getStatus();
+      // sleep loop to wake up and check if there are questions from time to time, to answer them with the default answer
+      while (installJobStatus.getState() != JobStatus.State.FINISHED) {
+        // sleep 1 second
+        sleep(1000);
+        // if the state is waiting, answer the question and continue
+        if (installJobStatus.getState() == JobStatus.State.WAITING) {
+          Object question = installJobStatus.getQuestion();
+          logger.info('Extension  [{}] on namespace  [{}] has stopped in state Waiting with question [{}]',
+                      extensionId, extensionNamespace, question.class.getName() );
+          // If it's a conflict question, answer it according to the decisions
+          if( question instanceof ConflictQuestion) {
+            // handle the question according to decisions &amp; all
+            this.handleConflictQuestion((ConflictQuestion)question, pagesDecisions, defaultDecision,
+                                        "Extension [${extensionId}] on namespace [${extensionNamespace}]");
+          } else if (question instanceof CleanPagesQuestion) {
+            // handle the delete question according to the configs
+            this.handleCleanPagesQuestion((CleanPagesQuestion)question, spacesToKeep, pagesToKeep, defaultDeleteDecision,
+                                          "Extension [${extensionId}] on namespace [${extensionNamespace}]");
+          }
+          // and continue running the job
+          installJobStatus.answered();
+        }
+      }
+      // we're done waiting for the job to execute, now check if the extension is really installed
+      InstalledExtension installedExtension = this.extensionManager.getInstalledExtension(extensionId, extensionNamespace);
+      // check that extension is installed and that it's the version we ordered and announce installed
+      if (installedExtension != null &amp;&amp; installedExtension.getId().getVersion().getValue().equals(extensionVersion)) {
+        logger.info('Install job finished, installed extension [{}]', installedExtension);
+        logSetupStep(wikiname, extensionName, 'FINISHED');
+        return true;
+      } else {
+        // the extension was not found as installed, report error
+        logger.error('Install job finished but extension is not installed: [{}] on wiki [{}] installed extension object: [{}]',
+                     extensionName, wikiname, installedExtension);
+        logSetupStep(wikiname, extensionName, 'ERROR');
+        return false;
+      }
+      // while the job status is not finished, sleep and whenever I find the job status in waiting state, push it with keeping the new page
+    } catch (Exception e) {
+      logger.error('Caught exception while installing extension [{}] on wiki [{}]: ', extensionName, wikiname, e.getMessage());
+      e.printStackTrace();
+      // if the install was not successful, put an error
+      logSetupStep(wikiname, extensionName, 'ERROR');
+    }
+    return false;
+  }
+
+  /**
+   * Handles a conflict question during installation, according to the pages decisions.
+   *
+   * @param pagesDecisions
+   * @param defaultDecision
+   * @param conflictQuestion
+   * @param logPrefix
+   */
+  private void handleConflictQuestion(ConflictQuestion conflictQuestion, Map&lt;String, GlobalAction&gt; pagesDecisions, 
+                                      GlobalAction defaultDecision, String logPrefix) {
+    String conflictDocLocalName = conflictQuestion.getCurrentDocument().getFullName();
+    GlobalAction configuredDecision = pagesDecisions.get(conflictDocLocalName);
+    // if there is a configured decision, use that one, otherwise use the default
+    if (configuredDecision != null) {
+      conflictQuestion.setGlobalAction(configuredDecision);
+      logger.info('{}: Conflict resolved for document [{}] to the configured decision [{}]', logPrefix, conflictDocLocalName, configuredDecision);
+    } else {
+      logger.info('{}: Got conflict on UNEXPECTED PAGE [{}]', logPrefix, conflictDocLocalName);
+      conflictQuestion.setGlobalAction(defaultDecision);
+      logger.info('{}: Conflict resolved for document [{}] to the default decision [{}]', logPrefix, conflictDocLocalName, defaultDecision);
+      // if there are no actual decisions configured, use the same decision always
+      if (pagesDecisions.size() == 0) {
+        conflictQuestion.setAlways(true);
+        logger.info('{}: Setting always for default decision [{}]', logPrefix, defaultDecision);
+      }
+    }
+  }
+
+  /**
+   * Handles a clean pages question during installation, according to the configured pages and spaces to keep.
+   *
+   * @param cleanQuestion
+   * @param spacesToKeep
+   * @param pagesToKeep
+   * @param defaultDeleteDecision
+   */
+  private void handleCleanPagesQuestion(CleanPagesQuestion cleanQuestion, List spacesToKeep, List pagesToKeep, String defaultDeleteDecision, String logPrefix) {
+    logger.info('{}: Got cleanup pages question for pages [{}]', logPrefix, cleanQuestion.getPages());
+    // figure out if we need to overwrite everything with delete or not
+    boolean overwriteWithDelete = 'DELETE'.equals(defaultDeleteDecision);
+    // do something only if we have anything configured, otherwise the question will be resolved with the default response
+    if ((spacesToKeep != null &amp;&amp; spacesToKeep.size() &gt; 0) || (pagesToKeep != null &amp;&amp; pagesToKeep.size() &gt; 0) || overwriteWithDelete) {
+      // go through the pages, if they're configured to be kept, set false on delete
+      // if they are not configured to be kept, use the overwriteWithDelete setting
+      cleanQuestion.getPages().each({ pageToClean, shouldDelete -&gt;
+        if (spacesToKeep != null &amp;&amp; spacesToKeep.contains(pageToClean.getLastSpaceReference().getName())) {
+          cleanQuestion.getPages().put(pageToClean, false);
+          logger.info('{}: Marking page [{}] to keep because in space [{}]', logPrefix, pageToClean, pageToClean.getLastSpaceReference().getName());
+        } else if(pagesToKeep != null &amp;&amp; pagesToKeep.contains(pageToClean)) {
+          cleanQuestion.getPages().put(pageToClean, false);
+          logger.info('{}: Marking page [{}] to keep because in pages to keep', logPrefix, pageToClean);
+        } else if (overwriteWithDelete) {
+          cleanQuestion.getPages().put(pageToClean, true);
+          logger.info('{}: Marking page [{}] to delete because delete is configured by default', logPrefix);
+        } else {
+          logger.info('{}: Keeping delete decision for page [{}] {}', logPrefix, pageToClean, ((shouldDelete) ?  ' (delete)' : ' (keep)'));
+        }
+      });
+      logger.info('{}: Final decisions for deletion, after configuration [{}]', logPrefix, cleanQuestion.getPages());
+    } else {
+      // log and let it do what it wants
+      logger.info('{}: No changes configured, submitting the following decisions [{}]', logPrefix, cleanQuestion.getPages());
+    }
+  }
+
+  public void finalizeDistributionWizard(String wikiname) {
+    if (wikiname == null || wikiname.length() == 0) {
+      logger.error('Wikiname empty');
+      return;
+    }
+
+    // Mark DW as started on the wiki
+    logSetupStep(wikiname, 'distributionwizard', 'INPROGRESS');
+
+    // get the status on the wiki in question:
+    WikiDistributionJob dwJob = this.distributionManager.getWikiJob(wikiname);
+    DistributionJobStatus dwStatus = null;
+    if (dwJob != null) {
+      dwStatus = dwJob.getStatus();
+      logger.info('Distribution wizard status on wiki [{}] is [{}]', wikiname, dwStatus.getState());
+
+      // sleep while DW is still on
+      while (dwStatus.getState() != State.FINISHED) {
+        if (dwStatus.getState() == State.WAITING) {
+          // get the question and answer it
+          def dwQuestion = dwStatus.getQuestion();
+          logger.info('Distribution wizard on wiki [{}] is waiting on question [{}]', wikiname, dwQuestion);
+          if (dwQuestion != null) {
+            DistributionStep dwStep = dwQuestion.getStep();
+            logger.info('Distribution wizard on wiki [{}] is waiting on step [{}]', wikiname, dwStep);
+            // if it's the default distribution step, then continue it, we should have installed
+            if (dwStep instanceof DefaultUIDistributionStep || dwStep instanceof ReportDistributionStep) {
+              dwStep.setState(DistributionStep.State.COMPLETED);
+              logger.info('Distribution wizard on wiki [{}] marked step [{}] as COMPLETED', wikiname, dwStep);
+            }
+          }
+        }
+        // answered the dw, continue
+        dwStatus.answered();
+        // and sleep, wait for next one
+        sleep(1000);
+      }
+    } else {
+      logger.info('No Distribution Wizard job on wiki [{}]', wikiname);
+    }
+
+    // Closing up: mark DW as finished.
+    logSetupStep(wikiname, 'distributionwizard', 'FINISHED');
+  }
+
+  /**
+    Allow to mark the status of a specific step
+   */
+  public void logSetupStep(String wikiname, String setupStep, String newStatus) {
+    logger.info('[{}] for wiki [{}] is [{}]', setupStep, wikiname, newStatus);
+  }
+}
+//}}}//</content>
+</xwikidoc>

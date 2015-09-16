@@ -41,6 +41,16 @@
       <name>Thomas Mortagne</name>
       <organization>XWiki SAS</organization>
     </developer>
+    <developer>
+      <id>aluca</id>
+      <name>Anca Luca</name>
+      <organization>XWiki SAS</organization>
+    </developer>
+    <developer>
+      <id>dgervalle</id>
+      <name>Denis Gervalle</name>
+      <organization>SOFTEC sa</organization>
+    </developer>
   </developers>
   <dependencies>
     <dependency>

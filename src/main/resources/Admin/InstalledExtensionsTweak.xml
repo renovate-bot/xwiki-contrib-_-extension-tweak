@@ -1,40 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
- * See the NOTICE file distributed with this work for additional
- * information regarding copyright ownership.
- *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
--->
-
-<xwikidoc version="1.1">
+<xwikidoc>
   <web>Admin</web>
   <name>InstalledExtensionsTweak</name>
   <language/>
   <defaultLanguage/>
   <translation>0</translation>
-  <creator>xwiki:XWiki.Admin</creator>
-  <creationDate>1425996514000</creationDate>
   <parent>Admin.WebHome</parent>
+  <creator>xwiki:XWiki.Admin</creator>
   <author>xwiki:XWiki.Admin</author>
+  <customClass/>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <date>1432893173000</date>
-  <contentUpdateDate>1432893173000</contentUpdateDate>
+  <creationDate>1425996514000</creationDate>
+  <date>1442408884000</date>
+  <contentUpdateDate>1442408884000</contentUpdateDate>
   <version>1.1</version>
   <title>Installed extensions tweaks</title>
+  <defaultTemplate/>
+  <validationScript/>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
@@ -53,6 +36,16 @@ As a page playing with installed extension it could be dangerous.
 #set($namespace = $request.namespace)
 #if (!$namespace)
   #set($namespace = "wiki:$wiki")
+#end
+#if("$!request.configDocName" != '')
+  ## Request for creating a new instance. We don't actually create a new instance here, we just redirect to the edit mode.
+  #set($targetConfigName = "${request.configSpaceName}.${request.configDocName}")
+  #if(!$xwiki.exists($targetConfigName) &amp;&amp; $xwiki.hasAccessLevel('edit', $xcontext.user, $targetConfigName))
+    ## Compute the default edit mode to ensure backward compatibility with documents still using the deprecated inline action.
+    $response.sendRedirect($xwiki.getURL($targetConfigName, 'edit', "template=Admin.EMInstallConfigTemplate&amp;parent=Admin.InstalledExtensionsTweak&amp;title=$!escapetool.url($request.configDocName)"))
+    ## Stop processing, since we already sent a redirect.
+    #stop
+  #end
 #end
 {{/velocity}}
 
@@ -144,7 +137,7 @@ As a page playing with installed extension it could be dangerous.
      &lt;dt&gt;Wiki where it's installed (anything if installed on root)&lt;/dt&gt;
      &lt;dd&gt;&lt;input type="text" name="wiki" value="$wiki"/&gt;&lt;/dd&gt;
     &lt;/du&gt;
-    &lt;input type="submit" value="Move"/&gt;
+    &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="Move" class="button"/&gt;&lt;/span&gt;
   &lt;/form&gt; 
 {{/html}}
 {{/velocity}}
@@ -156,12 +149,40 @@ As a page playing with installed extension it could be dangerous.
 {{html}}
  &lt;form&gt;
    &lt;input type="hidden" name="eaction" value="clean_search"/&gt;&lt;/dd&gt;
-   &lt;input type="submit" value="Search"/&gt;
+   &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="Search" class="button"/&gt;&lt;/span&gt;
   &lt;/form&gt; 
 {{/html}}
 
+= Configuration for silent extension installation =
+
+[tested since 5.4.7]
 
 {{velocity}}
+#if("$!targetConfigName" != '' &amp;&amp; $xwiki.exists($targetConfigName))
+  {{warning}}The target document already exists. Please choose a different name, or [[view the existing document&gt;&gt;$targetConfigName]]{{/warning}}
+#elseif("$!targetConfigName" != '')
+  {{warning}}You don't have permission to create that document{{/warning}}
+#end
+
+{{html}}
+&lt;form action="" id="newconfigdoc" method="post"&gt;
+  &lt;div&gt;
+    &lt;input type="hidden" name="form_token" value="$!{services.csrf.getToken()}" /&gt;
+    &lt;label for="configSpaceName"&gt;Space: &lt;/label&gt;&lt;input type="text" id="configSpaceName" name="configSpaceName" value="Admin" size="8"/&gt;
+    &lt;label for="configDocName"&gt;Document: &lt;/label&gt;&lt;input type="text" id="configDocName" name="configDocName" value="Document name" class="withTip"'/&gt;         
+    &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="Create a new configuration" class="button"/&gt;&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/form&gt;
+{{/html}}
+
+
+**Existing configurations**
+
+#set($sql = ", BaseObject as obj where obj.name=doc.fullName and obj.className=? and obj.name&lt;&gt;?")
+#foreach ($item in $services.query.hql($sql).bindValues(['Admin.EMInstallConfigClass', 'Admin.EMInstallConfigTemplate']).execute())
+  * [[$item]]
+#end
+
 #macro(searchExtensionsToRemove $extensionsToRemove)
   #set($localExtensions = $services.extension.local.localExtensions)
   #set($installedExtensionRepository = $services.extension.installed.repository)
