@@ -1,23 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<xwikidoc>
+<xwikidoc version="1.2" reference="Admin.InstalledExtensionsTweak" locale="">
   <web>Admin</web>
   <name>InstalledExtensionsTweak</name>
   <language/>
   <defaultLanguage/>
   <translation>0</translation>
-  <parent>Admin.WebHome</parent>
   <creator>xwiki:XWiki.Admin</creator>
-  <author>xwiki:XWiki.Admin</author>
-  <customClass/>
-  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <creationDate>1425996514000</creationDate>
-  <date>1442408884000</date>
-  <contentUpdateDate>1442408884000</contentUpdateDate>
+  <parent>Admin.WebHome</parent>
+  <author>xwiki:XWiki.Admin</author>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <date>1456414222000</date>
+  <contentUpdateDate>1456414221000</contentUpdateDate>
   <version>1.1</version>
   <title>Installed extensions tweaks</title>
-  <defaultTemplate/>
-  <validationScript/>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
