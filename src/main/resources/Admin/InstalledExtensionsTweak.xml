@@ -139,7 +139,7 @@ As a page playing with installed extension it could be dangerous.
 {{/html}}
 {{/velocity}}
 
-= Remove uninstalled extensions
+= Remove uninstalled extensions =
 
 [Since 5.3]
 
@@ -150,36 +150,7 @@ As a page playing with installed extension it could be dangerous.
   &lt;/form&gt; 
 {{/html}}
 
-= Configuration for silent extension installation =
-
-[tested since 5.4.7]
-
 {{velocity}}
-#if("$!targetConfigName" != '' &amp;&amp; $xwiki.exists($targetConfigName))
-  {{warning}}The target document already exists. Please choose a different name, or [[view the existing document&gt;&gt;$targetConfigName]]{{/warning}}
-#elseif("$!targetConfigName" != '')
-  {{warning}}You don't have permission to create that document{{/warning}}
-#end
-
-{{html}}
-&lt;form action="" id="newconfigdoc" method="post"&gt;
-  &lt;div&gt;
-    &lt;input type="hidden" name="form_token" value="$!{services.csrf.getToken()}" /&gt;
-    &lt;label for="configSpaceName"&gt;Space: &lt;/label&gt;&lt;input type="text" id="configSpaceName" name="configSpaceName" value="Admin" size="8"/&gt;
-    &lt;label for="configDocName"&gt;Document: &lt;/label&gt;&lt;input type="text" id="configDocName" name="configDocName" value="Document name" class="withTip"'/&gt;         
-    &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="Create a new configuration" class="button"/&gt;&lt;/span&gt;
-  &lt;/div&gt;
-&lt;/form&gt;
-{{/html}}
-
-
-**Existing configurations**
-
-#set($sql = ", BaseObject as obj where obj.name=doc.fullName and obj.className=? and obj.name&lt;&gt;?")
-#foreach ($item in $services.query.hql($sql).bindValues(['Admin.EMInstallConfigClass', 'Admin.EMInstallConfigTemplate']).execute())
-  * [[$item]]
-#end
-
 #macro(searchExtensionsToRemove $extensionsToRemove)
   #set($localExtensions = $services.extension.local.localExtensions)
   #set($installedExtensionRepository = $services.extension.installed.repository)
@@ -221,6 +192,37 @@ As a page playing with installed extension it could be dangerous.
       * {{success}}Extension $extensionToRemove has been removed from local repository{{/success}}
     #end
   #end
+#end
+{{/velocity}}
+
+= Configuration for silent extension installation =
+
+[tested since 5.4.7]
+
+{{velocity}}
+#if("$!targetConfigName" != '' &amp;&amp; $xwiki.exists($targetConfigName))
+  {{warning}}The target document already exists. Please choose a different name, or [[view the existing document&gt;&gt;$targetConfigName]]{{/warning}}
+#elseif("$!targetConfigName" != '')
+  {{warning}}You don't have permission to create that document{{/warning}}
+#end
+
+{{html}}
+&lt;form action="" id="newconfigdoc" method="post"&gt;
+  &lt;div&gt;
+    &lt;input type="hidden" name="form_token" value="$!{services.csrf.getToken()}" /&gt;
+    &lt;label for="configSpaceName"&gt;Space: &lt;/label&gt;&lt;input type="text" id="configSpaceName" name="configSpaceName" value="Admin" size="8"/&gt;
+    &lt;label for="configDocName"&gt;Document: &lt;/label&gt;&lt;input type="text" id="configDocName" name="configDocName" value="Document name" class="withTip"'/&gt;         
+    &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="Create a new configuration" class="button"/&gt;&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/form&gt;
+{{/html}}
+
+
+**Existing configurations**
+
+#set($sql = ", BaseObject as obj where obj.name=doc.fullName and obj.className=? and obj.name&lt;&gt;?")
+#foreach ($item in $services.query.hql($sql).bindValues(['Admin.EMInstallConfigClass', 'Admin.EMInstallConfigTemplate']).execute())
+  * [[$item]]
 #end
 {{/velocity}}</content>
 </xwikidoc>
