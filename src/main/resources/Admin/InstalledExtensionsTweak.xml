@@ -11,8 +11,8 @@
   <parent>Admin.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <date>1456414222000</date>
-  <contentUpdateDate>1456414221000</contentUpdateDate>
+  <date>1478088242000</date>
+  <contentUpdateDate>1478088242000</contentUpdateDate>
   <version>1.1</version>
   <title>Installed extensions tweaks</title>
   <comment/>
@@ -126,14 +126,14 @@ As a page playing with installed extension it could be dangerous.
 #end
 
 {{html}}
- &lt;form&gt;
+ &lt;form class="xform"&gt;
    &lt;input type="hidden" name="eaction" value="movetowikis"/&gt;&lt;/dd&gt;
-   &lt;du&gt;
-     &lt;dt&gt;Extension Id&lt;/dt&gt;
-     &lt;dd&gt;&lt;input type="text" name="extensionId" value="$extensionId" size="100"&gt;&lt;/dd&gt;
-     &lt;dt&gt;Wiki where it's installed (anything if installed on root)&lt;/dt&gt;
-     &lt;dd&gt;&lt;input type="text" name="wiki" value="$wiki"/&gt;&lt;/dd&gt;
-    &lt;/du&gt;
+   &lt;dl&gt;
+      &lt;dt&gt;Extension Id&lt;/dt&gt;
+      &lt;dd&gt;&lt;input type="text" name="extensionId" value="$extensionId"&gt;&lt;/dd&gt;
+      &lt;dt&gt;Wiki where it's installed (anything if installed on root)&lt;/dt&gt;
+      &lt;dd&gt;&lt;input type="text" name="wiki" value="$wiki"/&gt;&lt;/dd&gt;
+    &lt;/dl&gt;
     &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="Move" class="button"/&gt;&lt;/span&gt;
   &lt;/form&gt; 
 {{/html}}
@@ -193,6 +193,92 @@ As a page playing with installed extension it could be dangerous.
     #end
   #end
 #end
+{{/velocity}}
+
+= Repair a XAR extension =
+
+[tested since 5.4.7]
+
+{{velocity}}
+#set($extensionId = "$!request.extensionId")
+#set($extVersion = "$!request.extensionVersion")
+#if($request.action == 'dorepair')
+  #if ($extensionId != '' &amp;&amp; $extVersion != '')
+    #if ($xwiki.hasAccessLevel('programming', $doc.fullName))
+  
+    {{success}}
+    Repairing extension **$extensionId** and version **$extVersion**:
+
+    #foreach($requestedWiki in $request.getParameterValues('wikis'))
+      #set ($repairJob = $services.extension.xar.repairInstalledExtension($extensionId, $extVersion, $requestedWiki))
+      #set($discard = $repairJob.join())
+      * Extension repaired on wiki $requestedWiki: $services.extension.getInstalledExtension($extensionId, "wiki:${requestedWiki}")
+    #end
+    {{/success}}
+
+    #else
+      {{error}}You need programming right to execute this action.{{/error}}
+    #end
+  #end
+#elseif ($request.action == 'repairshowwikis')
+  #if ($extensionId != '' &amp;&amp; $extVersion != '')
+    #if ($xwiki.hasAccessLevel('programming', $doc.fullName))
+    {{info}}
+    Showing wikis for extension **$extensionId** and version **$extVersion**:
+
+    {{html}}
+    &lt;form class="xform" method="post" action="$doc.getURL()"&gt;
+      &lt;input type="hidden" name="action" value="dorepair" /&gt;
+      &lt;input type="hidden" name="extensionId" value="$extensionId"&gt;&lt;/input&gt;
+      &lt;input type="hidden" name="extensionVersion" value="$extVersion"&gt;&lt;/input&gt;
+      &lt;label&gt;Wikis&lt;/label&gt;
+      &lt;ol&gt;
+      #set($wikis = $services.wiki.getAll())
+      #foreach($wiki in $sorttool.sort($wikis, ['id']))
+        #set($installedExt = $services.extension.getInstalledExtension($extensionId, "wiki:${wiki.id}"))
+        #if ($installedExt == $util.null)
+          &lt;li&gt;&lt;span class="xwiki-form-listclass"&gt;
+            &lt;input name="wikis" type="checkbox" value="$!escapetool.xml($wiki.id)" class='toggleable'&gt;
+            $wiki.id - &lt;a href="$xwiki.getURL("${wiki.id}:Main.WebHome")"&gt;$wiki.defaultAlias&lt;/a&gt;
+          &lt;/span&gt;&lt;/li&gt;
+        #else
+          &lt;li&gt;&lt;span class="xwiki-form-listclass"&gt;
+            &lt;input name="wikis" type="checkbox" value="$!escapetool.xml($wiki.id)" class='toggleable' disabled="disabled"&gt;
+            $wiki.id - &lt;a href="$xwiki.getURL("${wiki.id}:Main.WebHome")"&gt;$wiki.defaultAlias&lt;/a&gt; - &lt;strong&gt;Extension is installed on this wiki at version: $installedExt.id.version.value&lt;/strong&gt;
+          &lt;/span&gt;&lt;/li&gt;
+        #end
+      #end
+      &lt;/ol&gt;
+
+      &lt;div class="buttonwrapper"&gt;
+        &lt;input class="button" type="submit" value="Do repair" /&gt;
+      &lt;/div&gt;
+    &lt;/form&gt;
+    {{/html}}
+
+    {{/info}}
+  
+    #else
+      {{error}}You need programming right to execute this action.{{/error}}
+    #end
+  #end
+#end
+
+{{html}}
+  &lt;form class="xform" method="get" action="$doc.getURL()"&gt;
+    &lt;input type="hidden" name="action" value="repairshowwikis" /&gt;
+    &lt;dl&gt;
+      &lt;dt&gt;&lt;label&gt;Extension Id&lt;/label&gt;&lt;/dt&gt;
+      &lt;dd&gt;&lt;input type="text" name="extensionId" value="$!extensionId"&gt;&lt;/input&gt;&lt;/dd&gt;
+      &lt;dt&gt;&lt;label&gt;Extension Version&lt;/label&gt;&lt;/dt&gt;
+      &lt;dd&gt;&lt;input type="text" name="extensionVersion" value="$!extensionVersion"&gt;&lt;/input&gt;&lt;/dd&gt;
+    &lt;/dl&gt;
+    &lt;div class="buttonwrapper"&gt;
+       &lt;input class="button" type="submit" value="Repair" /&gt;
+    &lt;/div&gt;
+  &lt;/form&gt;
+{{/html}}
+
 {{/velocity}}
 
 = Configuration for silent extension installation =
