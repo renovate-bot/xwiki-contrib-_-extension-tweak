@@ -33,7 +33,7 @@
   <artifactId>extension-tweak</artifactId>
   <packaging>xar</packaging>
   <name>Extension Tweak</name>
-  <version>1.4</version>
+  <version>1.5-SNAPSHOT</version>
   <description>Provide various tools to manipulate extensions (usually in a not very clean way)</description>
   <developers>
     <developer>
@@ -93,7 +93,7 @@
     <connection>scm:git:git://github.com/xwiki-contrib/extension-tweak.git</connection>
     <developerConnection>scm:git:git@github.com:xwiki-contrib/extension-tweak.git</developerConnection>
     <url>https://github.com/xwiki-contrib/extension-tweak</url>
-    <tag>extension-tweak-1.4</tag>
+    <tag>extension-tweak-1.0.1</tag>
   </scm>
   <issueManagement>
     <system>jira</system>
