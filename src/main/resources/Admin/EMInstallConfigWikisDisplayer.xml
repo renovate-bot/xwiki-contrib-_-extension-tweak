@@ -33,6 +33,8 @@
     &lt;/span&gt;&lt;/li&gt;
   #end
   &lt;/ol&gt;
+  ## add an empty value as well, so that we can empty the selection as well, otherwise if no box is checked above, no value is sent and thus the prop is not updated
+  &lt;input type="hidden" name="${prefix}${name}" value="" /&gt;
 #else
   &lt;ul&gt;
     #foreach($v in $value)
