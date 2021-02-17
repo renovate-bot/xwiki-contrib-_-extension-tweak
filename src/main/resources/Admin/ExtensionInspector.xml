@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xwikidoc version="1.2" reference="Admin.ExtensionInspector" locale="">
+  <web>Admin</web>
+  <name>ExtensionInspector</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <creator>xwiki:XWiki.Admin</creator>
+  <creationDate>1613548459000</creationDate>
+  <parent>Main.WebHome</parent>
+  <author>xwiki:XWiki.Admin</author>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <date>1613548477000</date>
+  <contentUpdateDate>1613548477000</contentUpdateDate>
+  <version>1.1</version>
+  <title>Extension Inspector</title>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>true</hidden>
+  <content>{{groovy}}
+
+def allInstalledExtensions = services.extension.installed.getInstalledExtensions();
+
+allInstalledExtensions.sort({a, b -&gt; a.getId() &lt;=&gt; b.getId()})
+
+def installedExtensions = allInstalledExtensions;
+
+def installedNamespaces = [:];
+allInstalledExtensions.each({ it -&gt;
+  installedNamespaces[it] = it.getNamespaces();
+});
+
+def formatNamespaces(namespaces, extension) {
+  if (namespaces == null) {
+    return "farm"
+  } else if (namespaces.size() == 0) {
+    return "-";
+  } else {
+    acc = "";
+    namespaces.collect({it -&gt; it.split(':')[1]}).forEach({it -&gt;
+      def prefReference = services.model.createDocumentReference(it, ["XWiki"], "XWikiPreferences");
+      acc = acc + """ &lt;a href="${xwiki.getURL(prefReference, "admin", "editor=globaladmin&amp;section=XWiki.Extensions&amp;extensionId=${extension.getId().getId()}&amp;extensionVersion=${extension.getId().getVersion().getValue()}")}"&gt;${it}&lt;/a&gt;"""
+    });
+    return "{{html clean=\"false\"}}${acc}{{/html}}";
+  }
+}
+
+def displayExtension(extension, dependencyNamespaces) {
+  formattedInstalledNamespaces = formatNamespaces(extension.getNamespaces(), extension)
+  formattedDependencyNamespaces = formatNamespaces(dependencyNamespaces, extension);
+  return "|{{html clean=\"false\"}}&lt;a href=\"${xwiki.getURL("XWiki.XWikiPreferences", "admin", "editor=globaladmin&amp;section=XWiki.Extensions&amp;extensionId=${extension.getId().getId()}&amp;extensionVersion=${extension.getId().getVersion().getValue()}")}\"&gt;${extension.getName()}&lt;/a&gt;{{/html}}|${extension.getId().getId()}|${extension.getId().getVersion()}|${formattedInstalledNamespaces}|${formattedDependencyNamespaces}";
+}
+
+println "|=Name|=ID|=Version|=Installed on ...|=Dependency on ..."
+installedExtensions.each({ it -&gt;
+  // Find the dependencies for every wiki
+  dependencyNamespaces = installedNamespaces[it].findAll({namespace -&gt; it.isDependency(namespace)})
+  // Find dependencies for the root namespace
+  it.isDependency(null) ? dependencyNamespaces.add('namespace:farm') : false;
+
+  if (dependencyNamespaces.size() == 0) {
+    // Print extensions that are not dependencies on any namespace
+    println displayExtension(it, dependencyNamespaces);
+  } else if (installedNamespaces[it] == null &amp;&amp; !it.isDependency(null)) {
+    println displayExtension(it, dependencyNamespaces);
+  } else if (installedNamespaces[it] != null &amp;&amp; dependencyNamespaces.size() &lt; installedNamespaces[it].size()) {
+    // Print extensions that are dependency on some namespaces, but not on every namespace
+    println displayExtension(it, dependencyNamespaces);
+  }
+});
+
+{{/groovy}}</content>
+</xwikidoc>
