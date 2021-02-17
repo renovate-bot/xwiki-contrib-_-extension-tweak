@@ -51,6 +51,11 @@
       <name>Denis Gervalle</name>
       <organization>SOFTEC sa</organization>
     </developer>
+    <developer>
+      <id>caubin</id>
+      <name>Clément Aubin</name>
+      <organization>XWiki SAS</organization>
+    </developer>
   </developers>
   <dependencies>
     <dependency>
