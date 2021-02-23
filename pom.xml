@@ -25,16 +25,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-   <groupId>org.xwiki.commons</groupId>
-   <artifactId>xwiki-commons-pom</artifactId>
-   <version>5.3</version>
+   <groupId>org.xwiki.contrib</groupId>
+   <artifactId>parent-platform</artifactId>
+   <version>6.4-10</version>
   </parent>
-  <groupId>org.xwiki.contrib</groupId>
   <artifactId>extension-tweak</artifactId>
   <packaging>xar</packaging>
   <name>Extension Tweak</name>
   <version>1.6-SNAPSHOT</version>
   <description>Provide various tools to manipulate extensions (usually in a not very clean way)</description>
+  <properties>
+    <xwiki.release.jira.skip>false</xwiki.release.jira.skip>
+    <xwiki.issueManagement.jira.id>EXTWEAK</xwiki.issueManagement.jira.id>
+  </properties>
   <developers>
     <developer>
       <id>tmortagne</id>
@@ -62,53 +65,14 @@
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-extension-script</artifactId>
       <type>jar</type>
-      <version>${commons.version}</version>
+      <version>${platform.version}</version>
       <scope>runtime</scope>
     </dependency>
   </dependencies>
-  <build>
-    <!-- Needed to add support for the XAR packaging -->
-    <extensions>
-      <extension>
-        <groupId>org.xwiki.commons</groupId>
-        <artifactId>xwiki-commons-tool-xar-handlers</artifactId>
-        <version>${commons.version}</version>
-      </extension>
-    </extensions>
-    <plugins>
-      <!-- The XAR packaging uses the XAR plugin and thus we need to define what version to use -->
-      <plugin>
-        <groupId>org.xwiki.commons</groupId>
-        <artifactId>xwiki-commons-tool-xar-plugin</artifactId>
-        <version>${commons.version}</version>
-      </plugin>
-    </plugins>
-    <pluginManagement>
-      <plugins>
-        <!-- The release plugin version in 5.3 does not work well with recent git -->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-release-plugin</artifactId>
-          <version>2.5.2</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
   <scm>
     <connection>scm:git:git://github.com/xwiki-contrib/extension-tweak.git</connection>
     <developerConnection>scm:git:git@github.com:xwiki-contrib/extension-tweak.git</developerConnection>
     <url>https://github.com/xwiki-contrib/extension-tweak</url>
-    <tag>extension-tweak-1.0.1</tag>
+    <tag>HEAD</tag>
   </scm>
-  <issueManagement>
-    <system>jira</system>
-    <url>http://jira.xwiki.org/jira/browse/EXTWEAK</url>
-  </issueManagement>
-  <distributionManagement>
-    <repository>
-      <id>xwiki-staging</id>
-      <name>XWiki Staging Repository</name>
-      <url>http://nexus.xwiki.org/nexus/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
 </project>
