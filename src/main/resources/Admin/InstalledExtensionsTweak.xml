@@ -301,6 +301,55 @@ As a page playing with installed extension it could be dangerous.
 
 {{/velocity}}
 
+= Set dependency marker =
+
+{{velocity}}
+#set($extensionId = "$!request.extensionId")
+#set($namespace = "$!request.namespace")
+#if($request.action == 'setdependencymarker' &amp;&amp; ($request.dependency == 'true' || $request.dependency == 'false') &amp;&amp; $extensionId != '')
+  #if ($xwiki.hasAccessLevel('programming', $doc.fullName))
+    #if ($namespace == '')
+      #set ($namespace = $NULL)
+    #end
+    #set ($installedExtension = $services.extension.installed.getInstalledExtension($extensionId, $namespace))
+    #if ($installedExtension)
+      #set ($dependency = $request.dependency == 'true')
+      #set ($void = $services.extension.installed.repository.installExtension($installedExtension, $namespace, $dependency))
+      {{success}}
+        The dependency status of the extension **$installedExtension** has been set to **$request.dependency** on namespace **#if ($namespace)$namespace#{else}null#end**.
+      {{/success}}
+    #else
+      {{error}}No extension with id **$extensionId** could be found on namespace **#if ($namespace)$namespace#{else}null#end**.{{/error}}
+    #end
+  #else
+    {{error}}You need programming right to execute this action.{{/error}}
+  #end
+#end
+
+{{html}}
+  &lt;form class="xform" method="get" action="$doc.getURL()"&gt;
+    &lt;input type="hidden" name="action" value="setdependencymarker" /&gt;
+    &lt;dl&gt;
+      &lt;dt&gt;&lt;label&gt;Extension Id&lt;/label&gt;&lt;/dt&gt;
+      &lt;dd&gt;&lt;input type="text" name="extensionId" value="$extensionId"&gt;&lt;/input&gt;&lt;/dd&gt;
+      &lt;dt&gt;&lt;label&gt;Namespace (empty for root namespace)&lt;/label&gt;&lt;/dt&gt;
+      &lt;dd&gt;&lt;input type="text" name="namespace" value="$!namespace"&gt;&lt;/input&gt;&lt;/dd&gt;
+      &lt;dt&gt;Dependency&lt;/dt&gt;
+      &lt;dd&gt;
+        &lt;select name="dependency"&gt;
+          &lt;option value="true"&gt;Yes&lt;/option&gt;
+          &lt;option value="false"&gt;No&lt;/option&gt;
+        &lt;/select&gt;
+      &lt;/dd&gt;
+    &lt;/dl&gt;
+    &lt;div class="buttonwrapper"&gt;
+       &lt;input class="button" type="submit" value="Set" /&gt;
+    &lt;/div&gt;
+  &lt;/form&gt;
+{{/html}}
+
+{{/velocity}}
+
 = Configuration for silent extension installation =
 
 [tested since 5.4.7]
