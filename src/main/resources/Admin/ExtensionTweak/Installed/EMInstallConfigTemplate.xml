@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
  * See the NOTICE file distributed with this work for additional
  * information regarding copyright ownership.
@@ -20,31 +19,33 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 -->
 
-<xwikidoc>
-  <web>Admin</web>
+<xwikidoc version="1.4" reference="Admin.ExtensionTweak.Installed.EMInstallConfigTemplate" locale="">
+  <web>Admin.ExtensionTweak.Installed</web>
   <name>EMInstallConfigTemplate</name>
   <language/>
   <defaultLanguage/>
   <translation>0</translation>
-  <parent>Admin.EMInstallConfigClass</parent>
   <creator>xwiki:XWiki.Admin</creator>
+  <creationDate>1702637679000</creationDate>
+  <parent>Admin.ExtensionTweak.Installed.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
-  <customClass/>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <creationDate>1420066800000</creationDate>
-  <date>1420066800000</date>
-  <contentUpdateDate>1420066800000</contentUpdateDate>
+  <date>1702637679000</date>
+  <contentUpdateDate>1702637679000</contentUpdateDate>
   <version>1.1</version>
   <title>EMInstallConfig Template</title>
-  <defaultTemplate/>
-  <validationScript/>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>false</hidden>
+  <content/>
   <object>
+    <name>Admin.ExtensionTweak.Installed.EMInstallConfigTemplate</name>
+    <number>0</number>
+    <className>Admin.ExtensionTweak.Installed.EMInstallConfigClass</className>
+    <guid>cc05c7ca-2799-4e69-9a95-31bd99585c7d</guid>
     <class>
-      <name>Admin.EMInstallConfigClass</name>
+      <name>Admin.ExtensionTweak.Installed.EMInstallConfigClass</name>
       <customClass/>
       <customMapping/>
       <defaultViewSheet/>
@@ -225,7 +226,7 @@
       <wikis>
         <cache>0</cache>
         <classname/>
-        <customDisplay>{{include document="Admin.WikideliaEMInstallConfigWikisDisplayer" /}}</customDisplay>
+        <customDisplay>{{include document="Admin.EMInstallConfigWikisDisplayer" /}}</customDisplay>
         <disabled>0</disabled>
         <displayType>checkbox</displayType>
         <idField/>
@@ -247,10 +248,21 @@
         <classType>com.xpn.xwiki.objects.classes.DBListClass</classType>
       </wikis>
     </class>
-    <name>Admin.EMInstallConfigTemplate</name>
-    <number>0</number>
-    <className>Admin.EMInstallConfigClass</className>
-    <guid>26386e91-5de5-4206-a27c-7716871bf776</guid>
+    <property>
+      <defaultConflictDecision>MERGED</defaultConflictDecision>
+    </property>
+    <property>
+      <defaultDeleteDecision>NONE</defaultDeleteDecision>
+    </property>
+    <property>
+      <installWithCurrentUser>0</installWithCurrentUser>
+    </property>
+    <property>
+      <pagesToKeep/>
+    </property>
+    <property>
+      <spacesToKeep/>
+    </property>
     <property>
       <toInstallExtId/>
     </property>
@@ -264,8 +276,10 @@
       <toRepairExtVersion/>
     </property>
     <property>
+      <tryToFinishDW>0</tryToFinishDW>
+    </property>
+    <property>
       <wikis/>
     </property>
   </object>
-  <content/>
 </xwikidoc>

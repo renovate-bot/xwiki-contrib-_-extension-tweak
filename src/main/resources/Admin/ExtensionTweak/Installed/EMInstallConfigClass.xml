@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
  * See the NOTICE file distributed with this work for additional
  * information regarding copyright ownership.
@@ -20,30 +19,34 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 -->
 
-<xwikidoc>
-  <web>Admin</web>
+<xwikidoc version="1.4" reference="Admin.ExtensionTweak.Installed.EMInstallConfigClass" locale="">
+  <web>Admin.ExtensionTweak.Installed</web>
   <name>EMInstallConfigClass</name>
   <language/>
   <defaultLanguage/>
   <translation>0</translation>
-  <parent>Admin.InstalledExtensionsTweak</parent>
   <creator>xwiki:XWiki.Admin</creator>
+  <creationDate>1702637679000</creationDate>
+  <parent>Admin.ExtensionTweak.Installed.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
-  <customClass/>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <creationDate>1420066800000</creationDate>
-  <date>1442398513000</date>
-  <contentUpdateDate>1442398513000</contentUpdateDate>
+  <date>1702637679000</date>
+  <contentUpdateDate>1702637679000</contentUpdateDate>
   <version>1.1</version>
   <title>EMInstallConfig Class</title>
-  <defaultTemplate/>
-  <validationScript/>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.0</syntaxId>
   <hidden>false</hidden>
+  <content>{{velocity}}
+## Replace the default space with the space where you want your documents to be created.
+## Replace the default parent with the one of your choice and save the document.
+##
+#set($defaultSpace = $doc.space)
+#set($defaultParent = $doc.fullName)
+{{/velocity}}</content>
   <class>
-    <name>Admin.EMInstallConfigClass</name>
+    <name>Admin.ExtensionTweak.Installed.EMInstallConfigClass</name>
     <customClass/>
     <customMapping/>
     <defaultViewSheet/>
@@ -247,6 +250,10 @@
     </wikis>
   </class>
   <object>
+    <name>Admin.ExtensionTweak.Installed.EMInstallConfigClass</name>
+    <number>0</number>
+    <className>XWiki.ClassSheetBinding</className>
+    <guid>f4354f0f-ae0a-4dc3-beee-5bab7275cfd3</guid>
     <class>
       <name>XWiki.ClassSheetBinding</name>
       <customClass/>
@@ -257,28 +264,40 @@
       <nameField/>
       <validationScript/>
       <sheet>
+        <cache>0</cache>
+        <classname/>
         <customDisplay/>
         <disabled>0</disabled>
+        <displayType>input</displayType>
+        <hint/>
+        <idField/>
+        <multiSelect>0</multiSelect>
         <name>sheet</name>
         <number>1</number>
-        <picker>0</picker>
+        <picker>1</picker>
         <prettyName>Sheet</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators/>
         <size>30</size>
+        <sort>none</sort>
+        <sql/>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+        <valueField/>
+        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
       </sheet>
     </class>
-    <name>Admin.EMInstallConfigClass</name>
-    <number>0</number>
-    <className>XWiki.ClassSheetBinding</className>
-    <guid>40283580-9bbc-4707-9b4a-0893b2e7320c</guid>
     <property>
       <sheet>EMInstallConfigSheet</sheet>
     </property>
   </object>
   <object>
+    <name>Admin.ExtensionTweak.Installed.EMInstallConfigClass</name>
+    <number>0</number>
+    <className>XWiki.DocumentSheetBinding</className>
+    <guid>2250d1cb-3ab5-4280-bdfc-7e2c11b3da94</guid>
     <class>
       <name>XWiki.DocumentSheetBinding</name>
       <customClass/>
@@ -289,32 +308,33 @@
       <nameField/>
       <validationScript/>
       <sheet>
+        <cache>0</cache>
+        <classname/>
         <customDisplay/>
         <disabled>0</disabled>
+        <displayType>input</displayType>
+        <hint/>
+        <idField/>
+        <multiSelect>0</multiSelect>
         <name>sheet</name>
         <number>1</number>
-        <picker>0</picker>
+        <picker>1</picker>
         <prettyName>Sheet</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators/>
         <size>30</size>
+        <sort>none</sort>
+        <sql/>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+        <valueField/>
+        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
       </sheet>
     </class>
-    <name>Admin.EMInstallConfigClass</name>
-    <number>0</number>
-    <className>XWiki.DocumentSheetBinding</className>
-    <guid>59adad20-11d7-45f6-b005-f2693b20cb7b</guid>
     <property>
       <sheet>XWiki.ClassSheet</sheet>
     </property>
   </object>
-  <content>{{velocity}}
-## Replace the default space with the space where you want your documents to be created.
-## Replace the default parent with the one of your choice and save the document.
-##
-#set($defaultSpace = $doc.space)
-#set($defaultParent = $doc.fullName)
-{{/velocity}}</content>
 </xwikidoc>

@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+-->
+
+<xwikidoc version="1.4" reference="Admin.ExtensionTweak.Installed.EMInstallConfigSheet" locale="">
+  <web>Admin.ExtensionTweak.Installed</web>
+  <name>EMInstallConfigSheet</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <creator>xwiki:XWiki.Admin</creator>
+  <creationDate>1702637679000</creationDate>
+  <parent>Admin.ExtensionTweak.Installed.WebHome</parent>
+  <author>xwiki:XWiki.Admin</author>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <date>1702637679000</date>
+  <contentUpdateDate>1702637679000</contentUpdateDate>
+  <version>1.1</version>
+  <title>#if($doc.name == 'EMInstallConfigSheet')EMInstallConfig Sheet#{else}$services.display.title($doc, {'displayerHint': 'default'})#end</title>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>false</hidden>
+  <content>{{velocity}}
+#set($discard = $xwiki.ssx.use("Admin.ExtensionTweak.Installed.EMInstallConfigSheet"))
+##
+#if ("$!request.action" == 'viewstatus')
+  [[$services.localization.render('eminstall.config.backtoconfig')&gt;&gt;$doc.fullName]]
+
+  #set ($wikis = $doc.getObject('Admin.ExtensionTweak.Installed.EMInstallConfigClass').getProperty('wikis').value)
+  #set ($toInstallExtId = $doc.getObject('Admin.ExtensionTweak.Installed.EMInstallConfigClass').getProperty('toInstallExtId').value)
+  #set ($toRepairExtId = $doc.getObject('Admin.ExtensionTweak.Installed.EMInstallConfigClass').getProperty('toRepairExtId').value)
+  (%class="statuslist"%)
+  #foreach($w in $wikis)
+    #set($installedExtToRepair = $null)
+    #set($installedExtToInstall = $null)
+    #set($installedExtToRepair = $services.extension.getInstalledExtension($toRepairExtId, "wiki:${w}"))
+    #set($installedExtToInstall = $services.extension.getInstalledExtension($toInstallExtId, "wiki:${w}"))
+    * {{html clean="false"}}&lt;h2&gt;$w&lt;/h2&gt;{{/html}}
+    ** $services.localization.render('eminstall.status.toRepair'): #if($installedExtToRepair != $null) $installedExtToRepair.id.version.value #else $services.localization.render('eminstall.status.toRepair.notinstalled') #end
+
+    ** $services.localization.render('eminstall.status.toInstall'): #if($installedExtToInstall != $null) $installedExtToInstall.id.version.value #else $services.localization.render('eminstall.status.toInstall.notinstalled') #end
+
+    ## check if there is a job in progress and display the log
+    #set($jobStatus = $services.extension.getExtensionJobStatus($toInstallExtId, "wiki:${w}"))
+    #if ($jobStatus != $null)
+      *** $services.localization.render('eminstall.status.status'): $jobStatus.state (%class="extension-installLog"%)(((
+        #if ("$!jobStatus.state" != 'NONE')
+          #foreach($sLog in $jobStatus.log)
+            (%class="oneLog log-$sLog.level"%)((({{{$sLog.level : $sLog.formattedMessage}}})))
+          #end
+        #end
+      )))
+    #else
+      *** $services.localization.render('eminstall.status.nostatus')
+    #end
+    ** $services.localization.render('eminstall.status.dwstatus'): $services.distribution.getState($w)
+    ## TODO: add information about the DW status on this wiki
+  #end
+
+  [[$services.localization.render('eminstall.config.backtoconfig')&gt;&gt;$doc.fullName]]
+#elseif("$!request.action" == 'install')
+  #set($installConfig = $doc.getObject('Admin.ExtensionTweak.Installed.EMInstallConfigClass'))
+  #set($wikisToInstall = $installConfig.getProperty('wikis').value)
+  #if ($installConfig != $null &amp;&amp; $wikisToInstall.size() &gt; 0)
+    ## get information about the extension
+    #set ($toInstallExtId = $installConfig.getProperty('toInstallExtId').value)
+    #set ($toInstallExtVersion = $installConfig.getProperty('toInstallExtVersion').value)
+    ## prepare extension information
+    #set($toInstallExtDetails = {'extensionId' : $toInstallExtId, 'extensionVersion' : $toInstallExtVersion})
+    ## get the default conflict decision
+    #if ("$!installConfig.getProperty('defaultConflictDecision').value" != '')
+      #set($discard = $toInstallExtDetails.put('defaultDecision', $installConfig.getProperty('defaultConflictDecision').value))
+    #end
+    ## get the spaces to keep
+    #if ($installConfig.getProperty('spacesToKeep').value.size() &gt; 0)
+      #set($discard = $toInstallExtDetails.put('spacesToKeep', $installConfig.getProperty('spacesToKeep').value))
+    #end
+    ## get the default delete decision
+    #if ("$!installConfig.getProperty('defaultDeleteDecision').value" != '')
+      #set($discard = $toInstallExtDetails.put('defaultDeleteDecision', $installConfig.getProperty('defaultDeleteDecision').value))
+    #end
+    #set($pageDecisions = {})
+    #foreach($pageDecisionObj in $doc.getObjects('Admin.ExtensionTweak.Installed.EMInstallConfigDecisionsClass'))
+      #set($discard = $pageDecisions.put($pageDecisionObj.getProperty('page').value, $pageDecisionObj.getProperty('decision').value))
+    #end
+    #set($discard = $toInstallExtDetails.put('pagesDecisions', $pageDecisions))
+    ## get the setting for the user which we need to use to make the install
+    #set($installWithCurrentUser = false)
+    #if ("$!installConfig.getProperty('installWithCurrentUser').value" == '1')
+      #set($installWithCurrentUser = true)
+    #end
+    #set($discard = $toInstallExtDetails.put('installWithCurrentUser', $installWithCurrentUser))
+    ## get whether we should look at Distribution Wizard or not
+    #set($checkDWStatus = false)
+    #if ("$!installConfig.getProperty('tryToFinishDW').value" == '1')
+      #set($checkDWStatus = true)
+    #end
+    ##
+    ## get the service and do the job!
+    #set($emInstallService = $xwiki.parseGroovyFromPage("Admin.ExtensionTweak.Installed.EMInstallServiceGroovy"))
+    $emInstallService.initialize($services)
+     
+    [[$services.localization.render('eminstall.config.backtoconfig')&gt;&gt;$doc.fullName]]
+
+    {{info}} Installing, with config: $toInstallExtDetails and service $emInstallService{{/info}}
+
+    #foreach($w in $wikisToInstall)
+      ## repair first...
+      * $w
+      #set($toRepairExtId = $installConfig.getProperty('toRepairExtId').value)
+      #set($toRepairExtVersion = $installConfig.getProperty('toRepairExtVersion').value)
+      #if ($toRepairExtId != "" &amp;&amp; $toRepairExtVersion != "")
+        #set ($repairJob = $services.extension.xar.repairInstalledExtension($toRepairExtId, $toRepairExtVersion, $w))
+        #set($discard = $repairJob.join())
+        ** Extension $toRepairExtId repaired on wiki $w : $services.extension.getInstalledExtension($toRepairExtId, "wiki:${w}")
+      #end
+      ## ...install after
+      #set($extensionsToInstall = {'defaultui' : $toInstallExtDetails})
+      #set($alreadyInstalledExtension = $services.extension.getInstalledExtension($toInstallExtId, "wiki:${w}"))
+      #if ($alreadyInstalledExtension == $null || "$!alreadyInstalledExtension.id.version" != $toInstallExtVersion)
+        ** Installing Extension $toInstallExtId on wiki $w
+        $emInstallService.installExtensions($w, $extensionsToInstall)
+      #else
+        ** Extension already installed on wiki $w at version $!alreadyInstalledExtension.id.version
+      #end
+      #if ($checkDWStatus)
+        ** Trying to finalize DW (see server logs for more info)...
+        $emInstallService.finalizeDistributionWizard($w)
+      #end
+    #end
+  #else
+    {{warning}}$services.localization.render('eminstall.doinstall.noconfig'){{/warning}}
+  #end
+
+  [[$services.localization.render('eminstall.config.backtoconfig')&gt;&gt;$doc.fullName]]
+#else
+  #if($xcontext.action=='view')
+  ==$services.localization.render('eminstall.config.actions.title')==
+  * [[$services.localization.render('eminstall.config.edit')&gt;&gt;path:${doc.getURL('edit')}]]
+  * {{html}}&lt;span class="wikiinternallink"&gt;&lt;a href="${doc.getURL('view', 'action=install')}" onClick="return confirm('Are you sure ?');"&gt;$services.localization.render('eminstall.config.install')&lt;/a&gt;&lt;/span&gt;{{/html}}
+  * [[$services.localization.render('eminstall.config.viewstatus')&gt;&gt;path:${doc.getURL('view', 'action=viewstatus')}]]
+  #end
+  
+  ==$services.localization.render('eminstall.config.configurations.title')==
+  (%class="xform full%)(((
+    #set($object = $doc.getObject('Admin.ExtensionTweak.Installed.EMInstallConfigClass'))
+    #set($class = $doc.getObject('Admin.ExtensionTweak.Installed.EMInstallConfigClass').xWikiClass)
+    #foreach($prop in ['wikis', 'toRepairExtId', 'toRepairExtVersion', 'toInstallExtId', 'toInstallExtVersion','installWithCurrentUser' ,'spacesToKeep', 'defaultDeleteDecision', 'defaultConflictDecision', 'tryToFinishDW'])
+      ; $doc.displayPrettyName($prop, $object)
+      : $doc.display($prop)
+    #end
+
+    ===$services.localization.render('eminstall.config.decisions.title')===
+    #foreach($pageDecision in $doc.getObjects('Admin.ExtensionTweak.Installed.EMInstallConfigDecisionsClass'))
+      #if ($velocityCount == 1) 
+        |=$doc.displayPrettyName('page', $pageDecision)|=$doc.displayPrettyName('decision', $pageDecision) | #if($xcontext.action=='edit')action |#end
+
+      #end
+      |$doc.display('page', $pageDecision)|$doc.display('decision', $pageDecision)|#if($xcontext.action=='edit')[[$services.localization.render('eminstall.config.deletedecision')&gt;&gt;path:$doc.getURL('objectremove',"form_token=$!{services.csrf.getToken()}&amp;classname=Admin.ExtensionTweak.Installed.EMInstallConfigDecisionsClass&amp;classid=$pageDecision.number&amp;xredirect=${escapetool.url($doc.getURL('edit'))}#HPageDecisions")]]|#end
+
+    #end
+
+
+    #if($xcontext.action=='edit')
+[[$services.localization.render('eminstall.config.adddecision')&gt;&gt;$doc.fullName||queryString="xpage=editobject&amp;xaction=addObject&amp;className=Admin.ExtensionTweak.Installed.EMInstallConfigDecisionsClass&amp;xredirect=$escapetool.url($doc.getURL('edit'))" anchor="HPageDecisions"]]
+    #end
+  )))
+#end
+{{/velocity}}</content>
+  <object>
+    <name>Admin.ExtensionTweak.Installed.EMInstallConfigSheet</name>
+    <number>0</number>
+    <className>XWiki.StyleSheetExtension</className>
+    <guid>7142b550-b8a3-4dc2-ac59-919d46f1016f</guid>
+    <class>
+      <name>XWiki.StyleSheetExtension</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <cache>
+        <cache>0</cache>
+        <defaultValue>long</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>cache</name>
+        <number>5</number>
+        <prettyName>Caching policy</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>long|short|default|forbid</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </cache>
+      <code>
+        <contenttype>PureText</contenttype>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <name>code</name>
+        <number>2</number>
+        <prettyName>Code</prettyName>
+        <rows>20</rows>
+        <size>50</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </code>
+      <contentType>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>contentType</name>
+        <number>6</number>
+        <prettyName>Content Type</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>CSS|LESS</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </contentType>
+      <name>
+        <disabled>0</disabled>
+        <name>name</name>
+        <number>1</number>
+        <prettyName>Name</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </name>
+      <parse>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType>yesno</displayType>
+        <name>parse</name>
+        <number>4</number>
+        <prettyName>Parse content</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </parse>
+      <use>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>use</name>
+        <number>3</number>
+        <prettyName>Use this extension</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>currentPage|onDemand|always</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </use>
+    </class>
+    <property>
+      <cache>default</cache>
+    </property>
+    <property>
+      <code>#xwikicontent &gt; ul.statuslist {
+    list-style: outside none none;
+    margin-left: 0;
+}
+
+.statuslist h2 {
+    background-color: #005a83;
+    color: #fff;
+    padding: 6px 10px;
+}
+
+.oneLog.log-WARN {
+    background-color: #ffee99;
+    border-left: 2px solid #ff9900;
+    padding-left: 3px;
+}
+
+
+.oneLog.log-INFO {
+    background-color: #eeffee;
+    border-left: 2px solid green;
+    padding-left: 3px;
+}
+
+table.wikisselector tr:hover {
+  background-color: #ccc;
+}
+
+
+.oneLog.log-ERROR {
+    background-color: #ffddcc;
+    border-left: 2px solid #ff0000;
+    padding-left: 3px;
+}
+
+.oneLog pre {
+    border: none;
+    margin: 0;
+}
+
+</code>
+    </property>
+    <property>
+      <contentType>CSS</contentType>
+    </property>
+    <property>
+      <name>Style for the wiki upgrade configuration</name>
+    </property>
+    <property>
+      <parse>0</parse>
+    </property>
+    <property>
+      <use>onDemand</use>
+    </property>
+  </object>
+</xwikidoc>

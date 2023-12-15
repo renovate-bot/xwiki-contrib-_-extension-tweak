@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+-->
+
+<xwikidoc version="1.4" reference="Admin.ExtensionTweak.Local.WebHome" locale="">
+  <web>Admin.ExtensionTweak.Local</web>
+  <name>WebHome</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <creator>xwiki:XWiki.Admin</creator>
+  <creationDate>1702643825000</creationDate>
+  <parent>Admin.ExtensionTweak.WebHome</parent>
+  <author>xwiki:XWiki.Admin</author>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <date>1702649452000</date>
+  <contentUpdateDate>1702649452000</contentUpdateDate>
+  <version>1.1</version>
+  <title/>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>false</hidden>
+  <content>{{box cssClass="floatinginfobox" title="**Contents**"}}
+{{toc/}}
+{{/box}}
+
+{{warning}}
+As a page manipulating local extensions, it could be dangerous.
+{{/warning}}
+
+= Remove uninstalled extensions =
+
+{{html}}
+ &lt;form&gt;
+   &lt;input type="hidden" name="eaction" value="clean_search"/&gt;&lt;/dd&gt;
+   &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="Search" class="button"/&gt;&lt;/span&gt;
+  &lt;/form&gt;
+{{/html}}
+
+{{velocity}}
+#macro(searchExtensionsToRemove $extensionsToRemove)
+  #set($localExtensions = $services.extension.local.localExtensions)
+  #set($installedExtensionRepository = $services.extension.installed.repository)
+  #foreach ($localExtension in $localExtensions)
+    #if (!$installedExtensionRepository.getInstalledExtension($localExtension.id))
+      #set($void = $extensionsToRemove.add($localExtension))
+    #end
+  #end
+#end
+#if ($request.eaction == 'clean_search')
+  #set($extensionsToRemove = [])
+  #searchExtensionsToRemove($extensionsToRemove)
+  #if ($extensionsToRemove.isEmpty())
+    {{info}}No extension to clean could be found{{/info}}
+  #else
+    {{box}}
+    The following local extensions will be removed:
+    #foreach ($extensionToRemove in $extensionsToRemove)
+      * $extensionToRemove
+    #end
+
+    {{html}}
+       &lt;form&gt;
+         &lt;input type="hidden" name="eaction" value="clean_confirm"/&gt;&lt;/dd&gt;
+         &lt;input type="submit" value="Confirm"/&gt;
+       &lt;/form&gt;
+    {{/html}}
+    {{/box}}
+  #end
+#elseif ($request.eaction == 'clean_confirm')
+  #set($extensionsToRemove = [])
+  #searchExtensionsToRemove($extensionsToRemove)
+  #if ($extensionsToRemove.isEmpty())
+    {{info}}No extension to clean could be found{{/info}}
+  #else
+    #set($localExtensionRepository = $services.extension.local.repository)
+    #foreach ($extensionToRemove in $extensionsToRemove)
+      #set($void = $localExtensionRepository.removeExtension($extensionToRemove))
+      * {{success}}Extension $extensionToRemove has been removed from local repository{{/success}}
+    #end
+  #end
+#end
+{{/velocity}}
+
+= Import a XIP package
+
+{{groovy}}
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.zip.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
+import groovy.io.FileType;
+
+if (request.contentType.startsWith('multipart/form-data')) {
+  File temporaryRoot = services.component.getInstance(org.xwiki.environment.Environment.class).getTemporaryDirectory();
+  def extensionSerialize = services.component.getInstance(org.xwiki.extension.repository.internal.ExtensionSerializer.class)
+  def localExtensionRepository = services.component.getInstance(org.xwiki.extension.repository.LocalExtensionRepository.class)
+
+  for (requestPart in request.parts) {
+    if (requestPart.name == 'xip_file') {
+        println ''
+        println "Importing ##${requestPart.submittedFileName}:##"
+
+        // Create a temporary folder
+        File tempDirecttory = Files.createTempDirectory(temporaryRoot.toPath(), "importXIP").toFile();
+
+        // Extract the XIP package
+        ZipInputStream zis = new ZipInputStream(requestPart.getInputStream());
+        try {
+          for (ZipEntry entry = zis.getNextEntry(); entry != null; entry = zis.getNextEntry()) {
+            if (!entry.isDirectory()) {
+                FileUtils.copyInputStreamToFile(new CloseShieldInputStream(zis), new File(tempDirecttory, entry.getName()));
+            }
+          }
+        } finally {
+          zis.close();
+        }
+
+      // Import the extracted extensions
+      tempDirecttory.eachFileRecurse (FileType.FILES) { file -&gt;
+        if (file.name.endsWith('.xed')) {
+          file.withInputStream {stream -&gt;
+            def extension = extensionSerialize.loadLocalExtensionDescriptor(null, stream)
+            if (localExtensionRepository.getLocalExtension(extension.id) == null) {
+              extension.setFile(new File(file.parent, file.name.substring(0, file.name.length() - '.xed'.length()) + '.' + extension.type))
+              localExtensionRepository.storeExtension(extension);
+              println "* {{success}}Extension $extension has been added to the local extensions repository.{{/success}}"
+            } else {
+              println "* {{warning}}Extension $extension already exist in the local extensions repository.{{/warning}}"
+            }
+          }
+        }
+      }
+
+      // Delete the temporary files
+      FileUtils.deleteDirectory(tempDirecttory);
+    }
+  }
+}
+{{/groovy}}
+
+{{html}}
+&lt;form method="post" enctype="multipart/form-data"&gt;
+  &lt;input type="file" name="xip_file" accept=".xip" multiple/&gt;
+  &lt;input class="button" type="submit" name="import_xip" value="Import"/&gt;
+&lt;/form&gt;
+{{/html}}</content>
+</xwikidoc>
